@@ -30,14 +30,37 @@ def send_welcome(message):
 
 **उपलब्ध कमांड:**
 
+/help - बॉट के बारे में जानकारी और संपर्क विवरण।
 /setsource <चैनल_आईडी> - उस चैनल का आईडी सेट करें जिससे संदेश कॉपी करने हैं।
 /setdestination <चैनल_आईडी> - उस चैनल का आईडी सेट करें जहाँ संदेश पोस्ट करने हैं।
 /startcopy - संदेशों की कॉपी करना शुरू करें।
 /stopcopy - संदेशों की कॉपी करना बंद करें।
+/removesource - स्रोत चैनल आईडी को हटाएँ।
+/removedestination - गंतव्य चैनल आईडी को हटाएँ।
 
 शुरू करने के लिए, कृपया स्रोत और गंतव्य चैनल आईडी सेट करें।
 """
     bot.reply_to(message, welcome_message)
+
+
+# हेल्प कमांड हैंडलर
+@bot.message_handler(commands=['help'])
+def send_help(message):
+    help_message = """
+यह बॉट दूसरे टेलीग्राम चैनलों से संदेश कॉपी करके आपके चैनल में पोस्ट करने में आपकी मदद करता है।
+
+**उपलब्ध कमांड:**
+
+/setsource <चैनल_आईडी> - उस चैनल का आईडी सेट करें जिससे संदेश कॉपी करने हैं।
+/setdestination <चैनल_आईडी> - उस चैनल का आईडी सेट करें जहाँ संदेश पोस्ट करने हैं।
+/startcopy - संदेशों की कॉपी करना शुरू करें।
+/stopcopy - संदेशों की कॉपी करना बंद करें।
+/removesource - स्रोत चैनल आईडी को हटाएँ।
+/removedestination - गंतव्य चैनल आईडी को हटाएँ।
+
+किसी भी सहायता के लिए, संपर्क करें: @captain_stive
+"""
+    bot.reply_to(message, help_message)
 
 
 # कमांड हैंडलर: स्रोत चैनल सेट करें
@@ -77,6 +100,22 @@ def stop_copying(message):
     global copying_enabled
     copying_enabled = False
     bot.reply_to(message, "संदेशों की कॉपी करना बंद किया गया।")
+
+
+# कमांड हैंडलर: स्रोत चैनल आईडी हटाएं
+@bot.message_handler(commands=['removesource'])
+def remove_source(message):
+    global source_channel_id
+    source_channel_id = None
+    bot.reply_to(message, "स्रोत चैनल आईडी हटा दी गई।")
+
+
+# कमांड हैंडलर: गंतव्य चैनल आईडी हटाएं
+@bot.message_handler(commands=['removedestination'])
+def remove_destination(message):
+    global destination_channel_id
+    destination_channel_id = None
+    bot.reply_to(message, "गंतव्य चैनल आईडी हटा दी गई।")
 
 
 # मैसेज हैंडलर: संदेशों को कॉपी करें
