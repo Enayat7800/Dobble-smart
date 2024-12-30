@@ -8,15 +8,15 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # चर जहाँ चैनल ID संग्रहीत किए जाएंगे
-source_channel_id = None
+source_channel_ids = []  # अब यह एक लिस्ट है
 destination_channel_id = None
 copying_enabled = False
 
 
 # हेल्पर फंक्शन यह जांचने के लिए कि क्या चैनल आईडी सेट हैं
 def check_channel_ids(message):
-    global source_channel_id, destination_channel_id
-    if not source_channel_id or not destination_channel_id:
+    global source_channel_ids, destination_channel_id
+    if not source_channel_ids or not destination_channel_id:
         bot.reply_to(message, "कृपया पहले स्रोत और गंतव्य चैनल आईडी सेट करें।")
         return False
     return True
@@ -31,12 +31,13 @@ def send_welcome(message):
 **उपलब्ध कमांड:**
 
 /help - बॉट के बारे में जानकारी और संपर्क विवरण।
-/setsource <चैनल_आईडी> - उस चैनल का आईडी सेट करें जिससे संदेश कॉपी करने हैं।
+/setsource <चैनल_आईडी1> <चैनल_आईडी2> ... - उन चैनलों का आईडी सेट करें जिनसे संदेश कॉपी करने हैं।
 /setdestination <चैनल_आईडी> - उस चैनल का आईडी सेट करें जहाँ संदेश पोस्ट करने हैं।
 /startcopy - संदेशों की कॉपी करना शुरू करें।
 /stopcopy - संदेशों की कॉपी करना बंद करें।
 /removesource - स्रोत चैनल आईडी को हटाएँ।
 /removedestination - गंतव्य चैनल आईडी को हटाएँ।
+/status - बॉट की वर्तमान स्थिति देखें।
 
 शुरू करने के लिए, कृपया स्रोत और गंतव्य चैनल आईडी सेट करें।
 """
@@ -51,12 +52,13 @@ def send_help(message):
 
 **उपलब्ध कमांड:**
 
-/setsource <चैनल_आईडी> - उस चैनल का आईडी सेट करें जिससे संदेश कॉपी करने हैं।
+/setsource <चैनल_आईडी1> <चैनल_आईडी2> ... - उन चैनलों का आईडी सेट करें जिनसे संदेश कॉपी करने हैं।
 /setdestination <चैनल_आईडी> - उस चैनल का आईडी सेट करें जहाँ संदेश पोस्ट करने हैं।
 /startcopy - संदेशों की कॉपी करना शुरू करें।
 /stopcopy - संदेशों की कॉपी करना बंद करें।
 /removesource - स्रोत चैनल आईडी को हटाएँ।
 /removedestination - गंतव्य चैनल आईडी को हटाएँ।
+/status - बॉट की वर्तमान स्थिति देखें।
 
 किसी भी सहायता के लिए, संपर्क करें: @captain_stive
 """
@@ -66,12 +68,13 @@ def send_help(message):
 # कमांड हैंडलर: स्रोत चैनल सेट करें
 @bot.message_handler(commands=['setsource'])
 def set_source(message):
-    global source_channel_id
+    global source_channel_ids
     try:
-        source_channel_id = int(message.text.split()[1])
-        bot.reply_to(message, f"स्रोत चैनल आईडी सेट किया गया: {source_channel_id}")
+        ids = message.text.split()[1:]
+        source_channel_ids = [int(id) for id in ids]
+        bot.reply_to(message, f"स्रोत चैनल आईडी सेट किए गए: {source_channel_ids}")
     except (IndexError, ValueError):
-        bot.reply_to(message, "उपयोग: /setsource <चैनल_आईडी>")
+        bot.reply_to(message, "उपयोग: /setsource <चैनल_आईडी1> <चैनल_आईडी2> ...")
 
 
 # कमांड हैंडलर: गंतव्य चैनल सेट करें
@@ -105,8 +108,8 @@ def stop_copying(message):
 # कमांड हैंडलर: स्रोत चैनल आईडी हटाएं
 @bot.message_handler(commands=['removesource'])
 def remove_source(message):
-    global source_channel_id
-    source_channel_id = None
+    global source_channel_ids
+    source_channel_ids = []
     bot.reply_to(message, "स्रोत चैनल आईडी हटा दी गई।")
 
 
@@ -118,11 +121,24 @@ def remove_destination(message):
     bot.reply_to(message, "गंतव्य चैनल आईडी हटा दी गई।")
 
 
+# कमांड हैंडलर: बॉट की स्थिति देखें
+@bot.message_handler(commands=['status'])
+def show_status(message):
+    status_message = f"""
+**बॉट की वर्तमान स्थिति:**
+
+कॉपी करना सक्रिय: {copying_enabled}
+स्रोत चैनल आईडी: {source_channel_ids if source_channel_ids else 'कोई नहीं'}
+गंतव्य चैनल आईडी: {destination_channel_id if destination_channel_id else 'कोई नहीं'}
+"""
+    bot.reply_to(message, status_message)
+
+
 # मैसेज हैंडलर: संदेशों को कॉपी करें
 @bot.message_handler(content_types=['text', 'photo', 'video', 'audio', 'document', 'sticker', 'voice', 'video_note'])
 def handle_messages(message):
-    global copying_enabled, source_channel_id, destination_channel_id
-    if copying_enabled and message.chat.type == 'channel' and message.sender_chat and message.sender_chat.id == source_channel_id:
+    global copying_enabled, source_channel_ids, destination_channel_id
+    if copying_enabled and message.chat.type == 'channel' and message.sender_chat and message.sender_chat.id in source_channel_ids:
         try:
             # संदेश के प्रकार के आधार पर उसे कॉपी करके अपने चैनल में पोस्ट करें
             if message.text:
@@ -162,6 +178,7 @@ def handle_messages(message):
             print(f"Message from channel {message.chat.title} copied and posted successfully.")
         except Exception as e:
             print(f"Error copying and posting message: {e}")
+
 
 # बॉट को रन करें
 print("बॉट चल रहा है...")
