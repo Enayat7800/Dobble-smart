@@ -1,15 +1,17 @@
- import telebot
- import os
+import telebot
+import os
 
- # एनवायरनमेंट वेरिएबल से बॉट टोकन लोड करें
- BOT_TOKEN = os.environ.get("BOT_TOKEN")
+# एनवायरनमेंट वेरिएबल से बॉट टोकन लोड करें
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
- bot = telebot.TeleBot(BOT_TOKEN)
+# बॉट को इनिशियलाइज़ करें
+bot = telebot.TeleBot(BOT_TOKEN)
 
 # चर जहाँ चैनल ID संग्रहीत किए जाएंगे
 source_channel_id = None
 destination_channel_id = None
 copying_enabled = False
+
 
 # हेल्पर फंक्शन यह जांचने के लिए कि क्या चैनल आईडी सेट हैं
 def check_channel_ids(message):
@@ -18,6 +20,7 @@ def check_channel_ids(message):
         bot.reply_to(message, "कृपया पहले स्रोत और गंतव्य चैनल आईडी सेट करें।")
         return False
     return True
+
 
 # स्टार्ट कमांड हैंडलर
 @bot.message_handler(commands=['start'])
@@ -36,6 +39,7 @@ def send_welcome(message):
 """
     bot.reply_to(message, welcome_message)
 
+
 # कमांड हैंडलर: स्रोत चैनल सेट करें
 @bot.message_handler(commands=['setsource'])
 def set_source(message):
@@ -45,6 +49,7 @@ def set_source(message):
         bot.reply_to(message, f"स्रोत चैनल आईडी सेट किया गया: {source_channel_id}")
     except (IndexError, ValueError):
         bot.reply_to(message, "उपयोग: /setsource <चैनल_आईडी>")
+
 
 # कमांड हैंडलर: गंतव्य चैनल सेट करें
 @bot.message_handler(commands=['setdestination'])
@@ -56,6 +61,7 @@ def set_destination(message):
     except (IndexError, ValueError):
         bot.reply_to(message, "उपयोग: /setdestination <चैनल_आईडी>")
 
+
 # कमांड हैंडलर: कॉपी करना शुरू करें
 @bot.message_handler(commands=['startcopy'])
 def start_copying(message):
@@ -64,12 +70,14 @@ def start_copying(message):
         copying_enabled = True
         bot.reply_to(message, "संदेशों की कॉपी करना शुरू किया गया।")
 
+
 # कमांड हैंडलर: कॉपी करना बंद करें
 @bot.message_handler(commands=['stopcopy'])
 def stop_copying(message):
     global copying_enabled
     copying_enabled = False
     bot.reply_to(message, "संदेशों की कॉपी करना बंद किया गया।")
+
 
 # मैसेज हैंडलर: संदेशों को कॉपी करें
 @bot.message_handler(content_types=['text', 'photo', 'video', 'audio', 'document', 'sticker', 'voice', 'video_note'])
@@ -116,5 +124,6 @@ def handle_messages(message):
         except Exception as e:
             print(f"Error copying and posting message: {e}")
 
+# बॉट को रन करें
 print("बॉट चल रहा है...")
 bot.polling(none_stop=True)
