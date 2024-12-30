@@ -1,146 +1,147 @@
 import telebot
 import os
 
-# एनवायरनमेंट वेरिएबल से बॉट टोकन लोड करें
+# Load bot token from environment variable
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-# बॉट को इनिशियलाइज़ करें
+# Initialize the bot
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# चर जहाँ चैनल ID संग्रहीत किए जाएंगे
-source_channel_ids = []  # अब यह एक लिस्ट है
+# Variables to store channel IDs
+source_channel_ids = []  # List of source channel IDs
 destination_channel_id = None
 copying_enabled = False
 
 
-# हेल्पर फंक्शन यह जांचने के लिए कि क्या चैनल आईडी सेट हैं
+# Helper function to check if source and destination channel IDs are set
 def check_channel_ids(message):
     global source_channel_ids, destination_channel_id
     if not source_channel_ids or not destination_channel_id:
-        bot.reply_to(message, "कृपया पहले स्रोत और गंतव्य चैनल आईडी सेट करें।")
+        bot.reply_to(message, "Please set the source and destination channel IDs first.")
         return False
     return True
 
 
-# स्टार्ट कमांड हैंडलर
+# Command handler for /start
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     welcome_message = """
-नमस्ते! यह बॉट दूसरे टेलीग्राम चैनलों से संदेश कॉपी करके आपके चैनल में पोस्ट करने में आपकी मदद करता है।
+Namaste! This bot helps you copy messages from other Telegram channels and post them to your channel.
 
-**उपलब्ध कमांड:**
+**Available Commands:**
 
-/help - बॉट के बारे में जानकारी और संपर्क विवरण।
-/setsource <चैनल_आईडी1> <चैनल_आईडी2> ... - उन चैनलों का आईडी सेट करें जिनसे संदेश कॉपी करने हैं।
-/setdestination <चैनल_आईडी> - उस चैनल का आईडी सेट करें जहाँ संदेश पोस्ट करने हैं।
-/startcopy - संदेशों की कॉपी करना शुरू करें।
-/stopcopy - संदेशों की कॉपी करना बंद करें।
-/removesource - स्रोत चैनल आईडी को हटाएँ।
-/removedestination - गंतव्य चैनल आईडी को हटाएँ।
-/status - बॉट की वर्तमान स्थिति देखें।
+/help - Information about the bot and contact details.
+/setsource <channel_id1> <channel_id2> ... - Set the IDs of channels from which to copy messages.
+/setdestination <channel_id> - Set the ID of the channel where to post messages.
+/startcopy - Start copying messages.
+/stopcopy - Stop copying messages.
+/removesource - Remove source channel IDs.
+/removedestination - Remove destination channel ID.
+/status - View the current status of the bot.
 
-शुरू करने के लिए, कृपया स्रोत और गंतव्य चैनल आईडी सेट करें।
+To get started, please set the source and destination channel IDs.
 """
     bot.reply_to(message, welcome_message)
 
 
-# हेल्प कमांड हैंडलर
+# Command handler for /help
 @bot.message_handler(commands=['help'])
 def send_help(message):
     help_message = """
-यह बॉट दूसरे टेलीग्राम चैनलों से संदेश कॉपी करके आपके चैनल में पोस्ट करने में आपकी मदद करता है।
+This bot helps you copy messages from other Telegram channels and post them to your channel.
 
-**उपलब्ध कमांड:**
+**Available Commands:**
 
-/setsource <चैनल_आईडी1> <चैनल_आईडी2> ... - उन चैनलों का आईडी सेट करें जिनसे संदेश कॉपी करने हैं।
-/setdestination <चैनल_आईडी> - उस चैनल का आईडी सेट करें जहाँ संदेश पोस्ट करने हैं।
-/startcopy - संदेशों की कॉपी करना शुरू करें।
-/stopcopy - संदेशों की कॉपी करना बंद करें।
-/removesource - स्रोत चैनल आईडी को हटाएँ।
-/removedestination - गंतव्य चैनल आईडी को हटाएँ।
-/status - बॉट की वर्तमान स्थिति देखें।
+/setsource <channel_id1> <channel_id2> ... - Set the IDs of channels from which to copy messages.
+/setdestination <channel_id> - Set the ID of the channel where to post messages.
+/startcopy - Start copying messages.
+/stopcopy - Stop copying messages.
+/removesource - Remove source channel IDs.
+/removedestination - Remove destination channel ID.
+/status - View the current status of the bot.
 
-किसी भी सहायता के लिए, संपर्क करें: @captain_stive
+For any assistance, contact: @captain_stive
 """
     bot.reply_to(message, help_message)
 
 
-# कमांड हैंडलर: स्रोत चैनल सेट करें
+# Command handler for /setsource
 @bot.message_handler(commands=['setsource'])
 def set_source(message):
     global source_channel_ids
     try:
         ids = message.text.split()[1:]
         source_channel_ids = [int(id) for id in ids]
-        bot.reply_to(message, f"स्रोत चैनल आईडी सेट किए गए: {source_channel_ids}")
+        bot.reply_to(message, f"Source channel IDs set: {source_channel_ids}")
     except (IndexError, ValueError):
-        bot.reply_to(message, "उपयोग: /setsource <चैनल_आईडी1> <चैनल_आईडी2> ...")
+        bot.reply_to(message, "Usage: /setsource <channel_id1> <channel_id2> ...")
 
 
-# कमांड हैंडलर: गंतव्य चैनल सेट करें
+# Command handler for /setdestination
 @bot.message_handler(commands=['setdestination'])
 def set_destination(message):
     global destination_channel_id
     try:
         destination_channel_id = int(message.text.split()[1])
-        bot.reply_to(message, f"गंतव्य चैनल आईडी सेट किया गया: {destination_channel_id}")
+        bot.reply_to(message, f"Destination channel ID set: {destination_channel_id}")
     except (IndexError, ValueError):
-        bot.reply_to(message, "उपयोग: /setdestination <चैनल_आईडी>")
+        bot.reply_to(message, "Usage: /setdestination <channel_id>")
 
 
-# कमांड हैंडलर: कॉपी करना शुरू करें
+# Command handler for /startcopy
 @bot.message_handler(commands=['startcopy'])
 def start_copying(message):
     global copying_enabled
     if check_channel_ids(message):
         copying_enabled = True
-        bot.reply_to(message, "संदेशों की कॉपी करना शुरू किया गया।")
+        bot.reply_to(message, "Started copying messages.")
 
 
-# कमांड हैंडलर: कॉपी करना बंद करें
+# Command handler for /stopcopy
 @bot.message_handler(commands=['stopcopy'])
 def stop_copying(message):
     global copying_enabled
     copying_enabled = False
-    bot.reply_to(message, "संदेशों की कॉपी करना बंद किया गया।")
+    bot.reply_to(message, "Stopped copying messages.")
 
 
-# कमांड हैंडलर: स्रोत चैनल आईडी हटाएं
+# Command handler for /removesource
 @bot.message_handler(commands=['removesource'])
 def remove_source(message):
     global source_channel_ids
     source_channel_ids = []
-    bot.reply_to(message, "स्रोत चैनल आईडी हटा दी गई।")
+    bot.reply_to(message, "Source channel IDs removed.")
 
 
-# कमांड हैंडलर: गंतव्य चैनल आईडी हटाएं
+# Command handler for /removedestination
 @bot.message_handler(commands=['removedestination'])
 def remove_destination(message):
     global destination_channel_id
     destination_channel_id = None
-    bot.reply_to(message, "गंतव्य चैनल आईडी हटा दी गई।")
+    bot.reply_to(message, "Destination channel ID removed.")
 
 
-# कमांड हैंडलर: बॉट की स्थिति देखें
+# Command handler for /status
 @bot.message_handler(commands=['status'])
 def show_status(message):
     status_message = f"""
-**बॉट की वर्तमान स्थिति:**
+**Current Bot Status:**
 
-कॉपी करना सक्रिय: {copying_enabled}
-स्रोत चैनल आईडी: {source_channel_ids if source_channel_ids else 'कोई नहीं'}
-गंतव्य चैनल आईडी: {destination_channel_id if destination_channel_id else 'कोई नहीं'}
+Copying enabled: {copying_enabled}
+Source channel IDs: {source_channel_ids if source_channel_ids else 'None'}
+Destination channel ID: {destination_channel_id if destination_channel_id else 'None'}
 """
     bot.reply_to(message, status_message)
 
 
-# मैसेज हैंडलर: संदेशों को कॉपी करें
+# Message handler to copy messages
 @bot.message_handler(content_types=['text', 'photo', 'video', 'audio', 'document', 'sticker', 'voice', 'video_note'])
 def handle_messages(message):
     global copying_enabled, source_channel_ids, destination_channel_id
+    # check if copying is enabled, message is from a channel and sender's id is in source channel ids list
     if copying_enabled and message.chat.type == 'channel' and message.sender_chat and message.sender_chat.id in source_channel_ids:
         try:
-            # संदेश के प्रकार के आधार पर उसे कॉपी करके अपने चैनल में पोस्ट करें
+            # Copy message based on its type
             if message.text:
                 bot.send_message(chat_id=destination_channel_id, text=message.text)
             elif message.photo:
@@ -180,6 +181,6 @@ def handle_messages(message):
             print(f"Error copying and posting message: {e}")
 
 
-# बॉट को रन करें
-print("बॉट चल रहा है...")
+# Run the bot
+print("Bot is running...")
 bot.polling(none_stop=True)
