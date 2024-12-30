@@ -1,9 +1,10 @@
-import telebot
+ import telebot
+ import os
 
-# **जरूरी:** नीचे दी गई जानकारी को अपनी जानकारी से बदलें।
-BOT_TOKEN = "YOUR_BOT_TOKEN"  # अपने बॉट टोकन को यहाँ डालें (बॉटफादर से प्राप्त करें)
+ # एनवायरनमेंट वेरिएबल से बॉट टोकन लोड करें
+ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-bot = telebot.TeleBot(BOT_TOKEN)
+ bot = telebot.TeleBot(BOT_TOKEN)
 
 # चर जहाँ चैनल ID संग्रहीत किए जाएंगे
 source_channel_id = None
